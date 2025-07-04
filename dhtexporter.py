@@ -66,11 +66,12 @@ def fetch_metadata(db_path: str) -> Dict[str, Any]:
     cursor.execute("SELECT id, name, display_name, avatar_url FROM users")
     for user_id, name, display_name, avatar_url in cursor.fetchall():
         user_data = {
-            "name": name,
-            "avatar": avatar_url
+            "name": name
         }
         if display_name:
             user_data["displayName"] = display_name
+        if avatar_url:
+            user_data["avatar"] = avatar_url
         metadata["users"][str(user_id)] = user_data
 
     # Fetch servers data
@@ -78,10 +79,13 @@ def fetch_metadata(db_path: str) -> Dict[str, Any]:
     for server_id, name, server_type, icon_hash in cursor.fetchall():
         server_data = {
             "name": name,
-            "type": server_type.lower(),
+            "type": server_type.replace("SERVER", "server")
+                               .replace("GROUP", "group")
+                               .replace("DM", "user") if server_type else "unknown"
         }
         if icon_hash:
-            server_data["iconUrl"] = f"https://cdn.discordapp.com/icons/{server_id}/{icon_hash}.webp"
+            base_url = "channel-icons" if server_data["type"] == "group" else "icons"
+            server_data["iconUrl"] = f"https://cdn.discordapp.com/{base_url}/{server_id}/{icon_hash}.webp"
         metadata["servers"][str(server_id)] = server_data
 
     # Fetch channels data
@@ -174,17 +178,6 @@ def get_message_reply(message_id: str) -> Optional[str]:
     result = cursor.fetchone()
     return str(result[0]) if result else None
 
-def should_include_message_text(text: str, attachments: Optional[List], embeds: Optional[List]) -> bool:
-    """Determine if we should include the message text field."""
-    # Always include if there's text
-    if text:
-        return True
-    # Don't include if there are attachments or embeds
-    if attachments or embeds:
-        return False
-    # Include empty string if nothing else
-    return True
-
 def process_message(message_data: tuple) -> str:
     """Process a single message into its final JSON format."""
     message_id, sender_id, channel_id, text, timestamp, idx, total = message_data
@@ -208,9 +201,9 @@ def process_message(message_data: tuple) -> str:
         "t": timestamp
     }
 
-    # Conditionally include message text
-    if should_include_message_text(text, attachments, embeds):
-        message_obj["m"] = text or ""
+    # Add text message if it exists
+    if text:
+        message_obj["m"] = text
 
     # Add attachments if they exist
     if attachments:

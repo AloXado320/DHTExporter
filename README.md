@@ -46,6 +46,6 @@ I would like to extend the functionally of the viewer, especially on media conte
     - Use separate folders, though that would make the HTML file less portable.
 - Make it work on this [New CSS](https://github.com/chylex/Discord-History-Tracker/pull/279) once it's done.
 - Account for main media files, these has to be saved inside a folder, again as a separate command argument)
-    - DHT App has a downloads section, though this is a save guard if the CDN links get down.
+    -  DHT App stores media inside the same db files or in a separate "dht_downloads" database. These are also stored separately with the "Export All..." options inside the Downloads section.
     - An idea would be to separate media by server folder for convenience.
 - Fix some edge cases if any, this script was only tested on the personal channel mentioned and a quick test database.
